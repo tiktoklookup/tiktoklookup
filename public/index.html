@@ -64,23 +64,44 @@
                 <!-- Current Info -->
                 <div class="bg-gray-700/50 p-6 rounded-lg border border-gray-600">
                     <div class="flex items-center gap-4 mb-6">
-                        <img id="profilePicture" src="" alt="Profile Picture" class="w-20 h-20 rounded-full border-2 border-blue-500 object-cover">
+                        <!-- UPDATED: Added an onerror fallback for the profile picture -->
+                        <img id="profilePicture" src="" alt="Profile Picture" class="w-20 h-20 rounded-full border-2 border-blue-500 object-cover bg-gray-700" onerror="this.onerror=null;this.src='https://placehold.co/80x80/374151/9CA3AF?text=N/A';">
                         <div>
                             <h2 id="resultUsername" class="text-2xl font-bold"></h2>
                             <p id="resultNickname" class="text-gray-400"></p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
-                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">User ID</p><p id="resultUserId" class="text-xl font-semibold"></p></div>
-                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Videos</p><p id="resultVideoCount" class="text-xl font-semibold"></p></div>
-                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Followers</p><p id="resultFollowers" class="text-xl font-semibold"></p></div>
-                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Following</p><p id="resultFollowing" class="text-xl font-semibold"></p></div>
+                    <!-- UPDATED: Changed grid to 3 columns and removed User ID -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <p class="text-sm text-gray-400">Followers</p>
+                            <p id="resultFollowers" class="text-xl font-semibold"></p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <p class="text-sm text-gray-400">Following</p>
+                            <p id="resultFollowing" class="text-xl font-semibold"></p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <p class="text-sm text-gray-400">Videos</p>
+                            <p id="resultVideoCount" class="text-xl font-semibold"></p>
+                        </div>
                     </div>
-                    <div class="mt-6 bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400 mb-2">Bio</p><p id="resultBio" class="text-white whitespace-pre-wrap"></p></div>
+
+                    <!-- NEW: Full-width box for the User ID -->
+                    <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+                         <p class="text-sm text-gray-400 mb-2">User ID</p>
+                         <p id="resultUserId" class="text-lg font-semibold break-all"></p>
+                    </div>
+
+                    <!-- Bio Section -->
+                    <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+                         <p class="text-sm text-gray-400 mb-2">Bio</p>
+                         <p id="resultBio" class="text-white whitespace-pre-wrap"></p>
+                    </div>
                 </div>
                 
                 <!-- History Info -->
-                <div id="historyContainer" class="info-box hidden">
+                <div id="historyContainer" class="info-box">
                     <h3 class="text-xl font-bold mb-4 text-center">Change History</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div><p class="font-semibold text-gray-400">Previous Username:</p><p id="prevUsername" class="text-lg"></p></div>
@@ -141,17 +162,33 @@
             try {
                 // This now calls our own secure backend API
                 const response = await fetch(`/api/lookup?username=${encodeURIComponent(username)}`);
-                const data = await response.json();
+                
+                const responseText = await response.text();
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Request failed with status ' + response.status);
+                    let errorMsg;
+                    try {
+                        const errorJson = JSON.parse(responseText);
+                        errorMsg = errorJson.error || `Server returned status ${response.status}`;
+                    } catch (e) {
+                        errorMsg = `Server returned an unexpected error (status ${response.status}). Check the server logs for more details.`;
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error("Failed to parse successful response:", responseText);
+                    throw new Error("Received a successful response from the server, but it was not in the expected format (JSON).");
                 }
 
-                // The backend now provides all the data we need in a clean format
                 displayResults(data.currentUser, data.stats);
                 
                 if (data.history && Object.keys(data.history).length > 0) {
                     displayHistory(data.history);
+                    historyContainer.classList.remove('hidden');
                 }
 
             } catch (error) {
@@ -167,6 +204,7 @@
             resultUsername.textContent = `@${user.uniqueId}`;
             resultNickname.textContent = user.nickname;
             resultUserId.textContent = user.id;
+// No change needed here, we're just populating the data as before.
             resultFollowers.textContent = formatNumber(stats.followerCount);
             resultFollowing.textContent = formatNumber(stats.followingCount);
             resultVideoCount.textContent = formatNumber(stats.videoCount);
@@ -179,7 +217,6 @@
             usernameChangedDate.textContent = dbRecord.usernameLastChanged ? new Date(dbRecord.usernameLastChanged).toLocaleString() : 'N/A';
             prevNickname.textContent = dbRecord.previousNickname || 'N/A';
             nicknameChangedDate.textContent = dbRecord.nicknameLastChanged ? new Date(dbRecord.nicknameLastChanged).toLocaleString() : 'N/A';
-            historyContainer.classList.remove('hidden');
         }
 
         function displayError(message) {
