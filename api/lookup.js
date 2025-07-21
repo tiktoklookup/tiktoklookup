@@ -58,8 +58,6 @@ module.exports = async (req, res) => {
         
         if (!jsonDataString) {
             console.error("Could not find the JSON data script tag in the HTML. TikTok may be blocking the request.");
-            // For debugging, let's see what HTML we got
-            // console.log("Received HTML:", htmlContent.substring(0, 500)); 
             throw new Error('Could not parse user data from the page. TikTok may be blocking the request.');
         }
         console.log("Successfully extracted JSON data string from HTML.");
@@ -92,9 +90,11 @@ module.exports = async (req, res) => {
             }
         }
         
+        // UPDATED: Added the $inc operator to increment a check counter
         const finalRecord = {
             $set: { userId: currentUserData.id, currentUsername: currentUserData.uniqueId, currentNickname: currentUserData.nickname, ...updateData },
-            $setOnInsert: { previousUsername: "", previousNickname: "", usernameLastChanged: null, nicknameLastChanged: null, firstSeen: now }
+            $setOnInsert: { previousUsername: "", previousNickname: "", usernameLastChanged: null, nicknameLastChanged: null, firstSeen: now },
+            $inc: { checkCount: 1 }
         };
 
         await collection.updateOne({ userId: currentUserData.id }, finalRecord, { upsert: true });
