@@ -1,0 +1,16 @@
+{
+  "name": "tiktok-user-lookup",
+  "version": "1.0.0",
+  "description": "A simple app to look up TikTok user data and store history.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^6.3.0",
+    "node-fetch": "^2.7.0"
+  }
+}
