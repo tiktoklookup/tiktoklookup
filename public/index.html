@@ -90,6 +90,12 @@
                          <p id="resultUserId" class="text-lg font-semibold break-all"></p>
                     </div>
 
+                    <!-- NEW: Box to display the account check count -->
+                    <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+                         <p class="text-sm text-gray-400 mb-2">Account Checked</p>
+                         <p id="resultCheckCount" class="text-lg font-semibold"></p>
+                    </div>
+
                     <div class="mt-6 bg-gray-800 p-4 rounded-lg">
                          <p class="text-sm text-gray-400 mb-2">Bio</p>
                          <p id="resultBio" class="text-white whitespace-pre-wrap"></p>
@@ -131,6 +137,7 @@
         const resultFollowing = document.getElementById('resultFollowing');
         const resultVideoCount = document.getElementById('resultVideoCount');
         const resultBio = document.getElementById('resultBio');
+        const resultCheckCount = document.getElementById('resultCheckCount'); // Added element
         
         // History elements
         const prevUsername = document.getElementById('prevUsername');
@@ -194,7 +201,6 @@
         }
 
         function displayResults(user, stats) {
-            // UPDATED: Point the image src to our new proxy API endpoint
             if (user.avatarMedium) {
                 profilePicture.src = `/api/image-proxy?url=${encodeURIComponent(user.avatarMedium)}`;
             } else {
@@ -216,6 +222,8 @@
             usernameChangedDate.textContent = dbRecord.usernameLastChanged ? new Date(dbRecord.usernameLastChanged).toLocaleString() : 'N/A';
             prevNickname.textContent = dbRecord.previousNickname || 'N/A';
             nicknameChangedDate.textContent = dbRecord.nicknameLastChanged ? new Date(dbRecord.nicknameLastChanged).toLocaleString() : 'N/A';
+            // UPDATED: Populate the check count
+            resultCheckCount.textContent = (dbRecord.checkCount || 1).toLocaleString();
         }
 
         function displayError(message) {
