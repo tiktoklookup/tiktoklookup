@@ -64,14 +64,12 @@
                 <!-- Current Info -->
                 <div class="bg-gray-700/50 p-6 rounded-lg border border-gray-600">
                     <div class="flex items-center gap-4 mb-6">
-                        <!-- UPDATED: Added an onerror fallback for the profile picture -->
                         <img id="profilePicture" src="" alt="Profile Picture" class="w-20 h-20 rounded-full border-2 border-blue-500 object-cover bg-gray-700" onerror="this.onerror=null;this.src='https://placehold.co/80x80/374151/9CA3AF?text=N/A';">
                         <div>
                             <h2 id="resultUsername" class="text-2xl font-bold"></h2>
                             <p id="resultNickname" class="text-gray-400"></p>
                         </div>
                     </div>
-                    <!-- UPDATED: Changed grid to 3 columns and removed User ID -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                         <div class="bg-gray-800 p-4 rounded-lg">
                             <p class="text-sm text-gray-400">Followers</p>
@@ -87,20 +85,17 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Full-width box for the User ID -->
                     <div class="mt-6 bg-gray-800 p-4 rounded-lg">
                          <p class="text-sm text-gray-400 mb-2">User ID</p>
                          <p id="resultUserId" class="text-lg font-semibold break-all"></p>
                     </div>
 
-                    <!-- Bio Section -->
                     <div class="mt-6 bg-gray-800 p-4 rounded-lg">
                          <p class="text-sm text-gray-400 mb-2">Bio</p>
                          <p id="resultBio" class="text-white whitespace-pre-wrap"></p>
                     </div>
                 </div>
                 
-                <!-- History Info -->
                 <div id="historyContainer" class="info-box">
                     <h3 class="text-xl font-bold mb-4 text-center">Change History</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -160,7 +155,6 @@
             errorMessage.classList.add('hidden');
 
             try {
-                // This now calls our own secure backend API
                 const response = await fetch(`/api/lookup?username=${encodeURIComponent(username)}`);
                 
                 const responseText = await response.text();
@@ -200,11 +194,16 @@
         }
 
         function displayResults(user, stats) {
-            profilePicture.src = user.avatarMedium;
+            // UPDATED: Point the image src to our new proxy API endpoint
+            if (user.avatarMedium) {
+                profilePicture.src = `/api/image-proxy?url=${encodeURIComponent(user.avatarMedium)}`;
+            } else {
+                profilePicture.src = 'https://placehold.co/80x80/374151/9CA3AF?text=N/A';
+            }
+
             resultUsername.textContent = `@${user.uniqueId}`;
             resultNickname.textContent = user.nickname;
             resultUserId.textContent = user.id;
-// No change needed here, we're just populating the data as before.
             resultFollowers.textContent = formatNumber(stats.followerCount);
             resultFollowing.textContent = formatNumber(stats.followingCount);
             resultVideoCount.textContent = formatNumber(stats.videoCount);
