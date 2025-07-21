@@ -9,31 +9,31 @@ module.exports = async (req, res) => {
 
     try {
         const decodedUrl = decodeURIComponent(url);
-
-        // Basic security check to prevent abuse of the proxy
-        const allowedHostnames = [
-            'p16-sign-va.tiktokcdn.com',
-            'p19-sign-va.tiktokcdn.com',
-            'p16-sign-sg.tiktokcdn.com',
-            'p77-sign-va.tiktokcdn.com',
-        ];
         const urlObject = new URL(decodedUrl);
-        if (!allowedHostnames.includes(urlObject.hostname)) {
-            // A more general check for any tiktokcdn domain
-            if (!urlObject.hostname.endsWith('tiktokcdn.com')) {
-                 return res.status(403).send('Forbidden: URL is not from an allowed domain.');
-            }
+
+        // A simpler, more robust security check.
+        // We only allow proxying from TikTok's CDN domains.
+        // Added 'tiktokcdn-us.com' to the check.
+        if (!urlObject.hostname.endsWith('tiktokcdn.com') && !urlObject.hostname.endsWith('tiktokcdn-us.com')) {
+            console.error(`Forbidden proxy attempt to: ${urlObject.hostname}`);
+            return res.status(403).send('Forbidden: URL is not from an allowed domain.');
         }
 
+        // Make the request to TikTok look as much like a real browser as possible
+        // by adding more headers.
         const imageResponse = await fetch(decodedUrl, {
             headers: {
-                // Mimic a browser referer to be safe
-                'Referer': 'https://www.tiktok.com/'
+                'Accept': 'image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://www.tiktok.com/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
             }
         });
 
         if (!imageResponse.ok) {
-            return res.status(imageResponse.status).send('Failed to fetch image from source');
+            // Forward the exact status and error from TikTok's server
+            console.error(`TikTok CDN returned an error: ${imageResponse.status}`);
+            return res.status(imageResponse.status).send(`Failed to fetch image from source. Status: ${imageResponse.status}`);
         }
 
         // Get the content type from the original response and send it back
